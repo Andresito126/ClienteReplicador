@@ -1,7 +1,10 @@
 package principal
 
 import (
+	"net/http"
 	"sync"
+
+	"github.com/gin-gonic/gin"
 )
 
 // modelo
@@ -19,3 +22,32 @@ var hasChanges = false
 var mu sync.Mutex 
 
 
+func SetupRouter() *gin.Engine {
+	r := gin.Default()
+
+	//get productos
+	r.GET("/productos", func(c *gin.Context) {
+		c.JSON(http.StatusOK, products)
+	})
+	
+	//post ptoducts
+	r.POST("/productos", func(c *gin.Context) {
+		var newProduct Product
+		if err := c.ShouldBindJSON(&newProduct); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+
+		mu.Lock()
+		lastID++
+		newProduct.ID = lastID
+		products = append(products, newProduct)
+		hasChanges = true 
+		mu.Unlock()
+
+		c.JSON(http.StatusCreated, newProduct)
+	})
+
+	return r
+
+}
