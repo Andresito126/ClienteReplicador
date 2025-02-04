@@ -27,6 +27,10 @@ func SetupRouter() *gin.Engine {
 
 	//get productos
 	r.GET("/productos", func(c *gin.Context) {
+		mu.Lock()
+		hasChanges = true 
+		mu.Unlock()
+		
 		c.JSON(http.StatusOK, products)
 	})
 	
@@ -46,6 +50,19 @@ func SetupRouter() *gin.Engine {
 		mu.Unlock()
 
 		c.JSON(http.StatusCreated, newProduct)
+	})
+
+	//obtener cambios
+	r.GET("/estado", func(c *gin.Context) {
+		mu.Lock()
+		if hasChanges {
+			hasChanges = false 
+			mu.Unlock()
+			c.JSON(http.StatusOK, gin.H{"estado": "cambio"})
+		} else {
+			mu.Unlock()
+			c.JSON(http.StatusOK, gin.H{"estado": "sin_cambio"})
+		}
 	})
 
 	return r
